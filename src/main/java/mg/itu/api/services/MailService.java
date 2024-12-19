@@ -1,5 +1,10 @@
 package mg.itu.api.services;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -29,5 +34,19 @@ public class MailService {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean sendMailValidator(String to, String code) throws FileNotFoundException,IOException{
+        String htmlDatas=Files.readString(Path.of("verifierMail.html"));
+        htmlDatas.replaceAll("{{code}}", code);
+        sendEmail(to, "Code de validation de l'adresse mail", htmlDatas, true);
+        return true;
+    }
+
+    public boolean sendAuthValidator(String to, String code) throws FileNotFoundException,IOException{
+        String htmlDatas=Files.readString(Path.of("verifierLogin.html"));
+        htmlDatas.replaceAll("{{code}}", code);
+        sendEmail(to, "Code de validation de l'adresse mail", htmlDatas, true);
+        return true;
     }
 }
