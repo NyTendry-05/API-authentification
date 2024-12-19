@@ -28,9 +28,10 @@ public class UtilisateurService {
             Utilisateur utilisateur = utilisateurOpt.get();
             if (passwordEncoder.matches(motDePasse, utilisateur.getMot_de_passe())) {
                 String codeValidation = genererCodeValidation();
+                
                 utilisateur.setCode_validation(codeValidation);
-                utilisateurRepository.save(utilisateur);
-                return utilisateur; 
+
+                return utilisateur;
             }
         }
         return null;
@@ -39,13 +40,14 @@ public class UtilisateurService {
     /**
      * Generates a random validation code.
      */
-    private String genererCodeValidation() {
+    public String genererCodeValidation() {
         Random random = new Random();
         int code = 100000 + random.nextInt(900000);  // 6-digit code
         return String.valueOf(code);
     }
 
     public Utilisateur saveUtilisateur(Utilisateur utilisateur) {
+        utilisateur.setIs_valide(false);
         return utilisateurRepository.save(utilisateur);
     }
 

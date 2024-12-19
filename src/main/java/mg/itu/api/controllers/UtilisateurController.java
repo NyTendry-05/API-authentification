@@ -3,7 +3,6 @@ package mg.itu.api.controllers;
 import mg.itu.api.models.Utilisateur;
 import mg.itu.api.services.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpSession;
@@ -12,8 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/utilisateur")
@@ -33,9 +30,37 @@ public class UtilisateurController {
         Utilisateur user = utilisateurService.verifierEmailMdp(email, motDePasse);
         if (user != null) {
             session.setAttribute("codeValidation", user.getCode_validation());
+            session.setAttribute("valideLogin",false);
+            session.setAttribute("nbTentatives",0);
+
+            /*Ajouter envoi du code par mail */
+
             return ResponseEntity.ok("Code de validation généré et enregistré dans la session.");
         } else {
             return ResponseEntity.status(401).body("Email ou mot de passe incorrect.");
+        }
+    }
+
+    @GetMapping("/sendLoginCode")
+    public ResponseEntity<String> verifCode(@RequestParam String code,
+            HttpSession session) {
+        // Récupérer le code stocké dans la session
+        String codeValidation = (String) session.getAttribute("codeValidation");
+
+        // Vérifier si le codeValidation est présent dans la session
+        if (codeValidation == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Aucun code de validation trouvé dans la session.");
+        }
+
+        // Comparer le code reçu avec le code stocké
+        if (code.equals(codeValidation)) {
+            // Supprimer le code de la session après vérification réussie
+            session.removeAttribute("codeValidation");
+            session.setAttribute("valideLogin", codeValidation);
+            return ResponseEntity.ok("Code validé avec succès.");
+        } else {
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Code invalide.");
         }
     }
 
@@ -46,54 +71,12 @@ public class UtilisateurController {
     })
     @PostMapping
     public ResponseEntity<Utilisateur> createUtilisateur(@RequestBody Utilisateur utilisateur) {
+        utilisateur.setCode_validation(utilisateurService.genererCodeValidation());
+        utilisateur.setIs_valide(false);
         Utilisateur savedUtilisateur = utilisateurService.saveUtilisateur(utilisateur);
+
+        /*Ajouter code envoi de mail*/
+
         return new ResponseEntity<>(savedUtilisateur, HttpStatus.CREATED);
-    }
-
-    // Get utilisateur by ID
-    @Operation(summary = "Get utilisateur by ID", description = "Fetches an utilisateur by its ID.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Utilisateur found"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur not found")
-    })
-    @GetMapping("/{id}")
-    public ResponseEntity<Utilisateur> getUtilisateurById(
-            @Parameter(description = "ID of the utilisateur to be fetched") @PathVariable Long id) {
-        Optional<Utilisateur> utilisateur = utilisateurService.getUtilisateurById(id);
-        return utilisateur.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-    }
-
-    // Get utilisateur by email
-    @Operation(summary = "Get utilisateur by email", description = "Fetches an utilisateur by their email.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Utilisateur found"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur not found")
-    })
-    @GetMapping("/email/{email}")
-    public ResponseEntity<Utilisateur> getUtilisateurByEmail(
-            @Parameter(description = "Email of the utilisateur to be fetched") @PathVariable String email) {
-        Optional<Utilisateur> utilisateur = utilisateurService.getUtilisateurByEmail(email);
-        return utilisateur.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-    }
-
-    // Update an utilisateur
-    @Operation(summary = "Update an existing utilisateur", description = "Updates the details of an existing utilisateur.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Utilisateur updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid utilisateur data")
-    })
-    @PutMapping("/{id}")
-    public ResponseEntity<Utilisateur> updateUtilisateur(
-            @PathVariable Long id, @RequestBody Utilisateur utilisateur) {
-        Optional<Utilisateur> existingUtilisateur = utilisateurService.getUtilisateurById(id);
-        if (existingUtilisateur.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        utilisateur.setId_utilisateur(id); // Ensure we're updating the correct utilisateur
-        Utilisateur updatedUtilisateur = utilisateurService.saveUtilisateur(utilisateur);
-        return ResponseEntity.ok(updatedUtilisateur);
     }
 }
