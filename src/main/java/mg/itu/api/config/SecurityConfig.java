@@ -26,9 +26,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui/index.html").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                // .requestMatchers(HttpMethod.POST, "/utilisateur/login").permitAll()
+                // .requestMatchers(HttpMethod.POST, "/utilisateur/verifierCodeValidation").permitAll()
+                .requestMatchers("/utilisateur/**").permitAll() 
+                .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
                 .anyRequest().authenticated())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .formLogin(formLogin -> formLogin.loginPage("/swagger-ui/index.html"))
+            // .formLogin(formLogin -> formLogin.loginPage("/swagger-ui/index.html"))
             .httpBasic(httpBasic -> httpBasic.disable());
         return http.build();
     }

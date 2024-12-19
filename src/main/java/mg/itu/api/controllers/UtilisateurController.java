@@ -16,11 +16,21 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/utilisateur")
 public class UtilisateurController {
 
+    @Autowired
     private final UtilisateurService utilisateurService;
 
-    @Autowired
     public UtilisateurController(UtilisateurService utilisateurService) {
         this.utilisateurService = utilisateurService;
+    }
+
+    @PostMapping("/verifierCodeValidation")
+    public ResponseEntity<String> verifierCodeValidation(@RequestParam String codeValidation, HttpSession session) {
+        String codeSession = (String) session.getAttribute("codeValidation");
+        if (codeSession != null && codeSession.equals(codeValidation)) {
+            return ResponseEntity.ok("Code de validation correct.");
+        } else {
+            return ResponseEntity.status(400).body("Code de validation incorrect.");
+        }
     }
 
     @PostMapping("/login")
