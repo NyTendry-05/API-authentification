@@ -13,4 +13,3 @@ public class Utilisateur {
     private Boolean is_valide; 
     private String code_validation;
 }
-
